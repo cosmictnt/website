@@ -22,4 +22,5 @@ You need:
 # Updating your website
 
 5. Make a pull request online
-
+6. merge dev with main
+7. DONT DELETE DEV BRANCH
