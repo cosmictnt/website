@@ -16,6 +16,10 @@ You need:
 `git pull`
 
 3. make your changes
+
+npm install
+npm run dev
+
 4. commit and push using the vscode git system
 
 
