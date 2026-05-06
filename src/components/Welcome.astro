@@ -20,15 +20,16 @@ html,body{
 }
 
 /* LAYOUT */
-#layout{display:flex; height:100vh; align-items:stretch}
+#layout{display:flex; height:100vh; align-items:stretch; gap:2rem}
 
 /* LEFT */
 #left{
   width:40%;
-  padding:2rem;
+  padding:1.5rem 1.75rem;
   display:flex;
   flex-direction:column;
-  gap:1.5rem;
+  gap:1.25rem;
+  justify-content:center;
 }
 
 /* LOGO */
@@ -38,36 +39,49 @@ html,body{
 .content{display:flex;gap:2rem;align-items:center}
 
 /* CRT */
+/* CRT bezel: stronger retro TV styling */
 .crt-frame{
-  padding:14px;
-  background: linear-gradient(145deg,
-    #e7dfc6 0%,
-    #d8cfb2 35%,
-    #cbbf9f 100%);
-  border-radius:10px;
-  box-shadow:
-    inset 0 2px 6px rgba(255,255,255,0.25),
-    inset 0 -4px 10px rgba(0,0,0,0.25),
-    0 12px 30px rgba(0,0,0,0.6);
-  border:1px solid rgba(90,80,50,0.25);
+  /* convert CRT to a clean UI card while preserving the portrait */
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius:12px;
+  box-shadow: 0 8px 20px rgba(2,6,23,0.6);
+  border:1px solid rgba(255,255,255,0.03);
+  position:relative;
 }
 
+/* controls removed (buttons intentionally deleted) */
+
 /* SCREEN */
+
+/* screen: curved glass effect + inner glow */
 .screen{
   width:150px;
   height:150px;
-  background:black;
+  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.03), transparent 20%),
+              linear-gradient(#060606, #000000);
   overflow:hidden;
   position:relative;
-  border-radius:6px;
+  border-radius:18px; /* more rounded like old CRT masks */
+  box-shadow: inset 0 -12px 24px rgba(0,0,0,0.7), inset 0 8px 20px rgba(255,255,255,0.02);
+  border: 2px solid rgba(0,0,0,0.6);
 }
 
 .screen img{
-  width:100%;
-  height:100%;
+  width:110%;
+  height:110%;
   object-fit:cover;
-  filter:contrast(1.15) brightness(0.9) saturate(0.9);
+  transform: translate(-5%, -5%);
+  filter: contrast(1.1) brightness(0.85) saturate(0.95);
+  display:block;
 }
+
+/* glass/scanline overlays stay above the image */
+.screen .scanlines{ mix-blend-mode:overlay }
+.screen .vignette{ pointer-events:none }
 
 .scanlines{
   position:absolute;
@@ -185,23 +199,24 @@ p{max-width:300px;color:#cfcf9a}
 .grid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
-  gap:6px;
+  gap:8px;
 }
 
 .grid a{
-  padding:6px;
-  font-size:.85rem;
-  border:1px solid rgba(147,144,81,0.3);
+  padding:8px 10px;
+  font-size:.95rem;
+  border:1px solid rgba(255,255,255,0.04);
   text-decoration:none;
   color:var(--light);
-  transition:.2s;
+  transition: background .18s, transform .18s;
+  border-radius:8px;
+  background: rgba(255,255,255,0.01);
 }
 
 .grid a:hover{
-  background:black;
-  color:var(--mid);
-  border-color:var(--mid);
-  box-shadow:0 0 6px var(--mid);
+  background: rgba(96,165,250,0.08);
+  color:var(--light);
+  transform: translateY(-2px);
 }
 
 /* SOCIAL MEDIA */
@@ -221,76 +236,114 @@ p{max-width:300px;color:#cfcf9a}
   opacity:.4;
 }
 
-/* RIGHT */
+/* RIGHT (show reel + social stacked) */
 #right{
   width:60%;
   background:black;
+  display:flex;
+  flex-direction:column;
+  gap:1rem;
+  align-items:stretch;
 }
+
+.show-reel{
+  flex:1 1 auto;
+  min-height:75vh; /* larger desktop show reel for better balance */
+  width:100%;
+  background:transparent;
+}
+
+.show-reel{ display:flex; align-items:center; justify-content:center }
 
 #right iframe{
   width:100%;
   height:100%;
   border:none;
+  display:block;
 }
+
+/* responsive video wrapper to preserve aspect ratio and avoid squashing on mobile */
+.video-wrapper{
+  width:100%;
+  max-width:100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+.video-wrapper iframe{
+  width:100%;
+  height:100%;
+  border:0;
+  display:block;
+}
+
+@media (min-width: 900px) {
+  /* On larger screens, let the wrapper fill the show-reel height so the iframe isn't limited by aspect-ratio */
+  .video-wrapper{ aspect-ratio: auto; height:100%; }
+}
+
+/* visual separation between show reel and social */
+.reel-divider{
+  height:1px;
+  width:100%;
+  margin:6px 0;
+  background: linear-gradient(to right, transparent, rgba(147,144,81,0.12), transparent);
+}
+
+/* social card to separate from show reel */
+#social{
+  margin:0;
+  padding:12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+#social h3{
+  margin:0 0 8px 0;
+  font-size:1rem;
+  color:var(--light);
+}
+
+#social .grid{ margin-top:6px }
 
 /* =========================
-   \u2728 ADDED: SUBTLE BRIGHTNESS VARIATION
+   ✨ Subtle brightness variation for buttons
+   - Apply small brightness differences per-button so the UI feels textured
+   - Use a gentler hover (no !important) that brightens and lifts the element
    ========================= */
 
-.big-box:nth-child(1),
-.grid a:nth-child(1){
-  filter: brightness(1.06);
+/* big-buttons (hero CTA buttons) — small, pleasant variance */
+.big-buttons .big-box:nth-child(1) { filter: brightness(1.04); }
+.big-buttons .big-box:nth-child(2) { filter: brightness(0.99); }
+.big-buttons .big-box:nth-child(3) { filter: brightness(1.01); }
+.big-buttons .big-box:nth-child(4) { filter: brightness(0.97); }
+
+/* grid links (software / social lists) — keep the existing stagger */
+.grid a:nth-child(1){ filter: brightness(1.06); }
+.grid a:nth-child(2){ filter: brightness(0.96); }
+.grid a:nth-child(3){ filter: brightness(1.02); }
+.grid a:nth-child(4){ filter: brightness(0.94); }
+.grid a:nth-child(5){ filter: brightness(1.08); }
+.grid a:nth-child(6){ filter: brightness(0.98); }
+.grid a:nth-child(7){ filter: brightness(1.03); }
+.grid a:nth-child(8){ filter: brightness(0.95); }
+.grid a:nth-child(9){ filter: brightness(1.07); }
+.grid a:nth-child(10){ filter: brightness(0.93); }
+.grid a:nth-child(11){ filter: brightness(1.01); }
+.grid a:nth-child(12){ filter: brightness(0.97); }
+
+/* hover: brighten and add a soft shadow/lift (avoid !important) */
+.big-box:hover{
+  filter: brightness(1.12);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  transform: translateY(-2px);
 }
 
-.big-box:nth-child(2),
-.grid a:nth-child(2){
-  filter: brightness(0.96);
-}
-
-.grid a:nth-child(3){
-  filter: brightness(1.02);
-}
-
-.grid a:nth-child(4){
-  filter: brightness(0.94);
-}
-
-.grid a:nth-child(5){
-  filter: brightness(1.08);
-}
-
-.grid a:nth-child(6){
-  filter: brightness(0.98);
-}
-
-.grid a:nth-child(7){
-  filter: brightness(1.03);
-}
-
-.grid a:nth-child(8){
-  filter: brightness(0.95);
-}
-
-.grid a:nth-child(9){
-  filter: brightness(1.07);
-}
-
-.grid a:nth-child(10){
-  filter: brightness(0.93);
-}
-
-.grid a:nth-child(11){
-  filter: brightness(1.01);
-}
-
-.grid a:nth-child(12){
-  filter: brightness(0.97);
-}
-
-/* hover override */
-.big-box:hover,
 .grid a:hover{
-  filter: brightness(1.15) !important;
+  filter: brightness(1.12);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.45);
 }
 
 /* ----------------------
@@ -309,7 +362,7 @@ p{max-width:300px;color:#cfcf9a}
   .big-buttons { flex-direction:column }
   .big-box { width:100%; padding:12px }
   .grid { grid-template-columns:repeat(2,1fr) }
-  #right { height:40vh }
+  .show-reel { min-height:40vh }
   #right iframe { height:100% }
 }
 
@@ -317,8 +370,8 @@ p{max-width:300px;color:#cfcf9a}
   .content { flex-direction:column; align-items:flex-start }
   .screen { width:100px; height:100px }
   h1 { font-size:1.4rem }
-  .grid { grid-template-columns:repeat(1,1fr) }
-  #right { height:35vh }
+  .grid { grid-template-columns:repeat(1,1fr); gap:8px }
+  .show-reel { min-height:35vh }
 }
 
 </style>
@@ -354,6 +407,8 @@ Focused on realism and lighting.
 <div class="big-buttons">
   <a href="/portfolio" class="big-box">PORTFOLIO</a>
   <a href="/blog" class="big-box">BLOG</a>
+  <a href="/cv.pdf" class="big-box" target="_blank">CV</a>
+  <a href="/personal-statement" class="big-box">PERSONAL STATEMENT</a>
 </div>
 
 </div>
@@ -414,17 +469,7 @@ Workflow built around Blender, Houdini, Maya, and Adobe Suite with strong focus 
 </div>
 </section>
 
-<!-- SOCIAL MEDIA -->
-<section id="social">
-<h3>Social Media</h3>
-
-<div class="grid">
-<a href="https://youtube.com/@brokenglassstudios3976" target="_blank">YouTube</a>
-<a href="https://www.instagram.com/luca_marsh?igsh=MXBjZnBmZWR6MDk1Yw==" target="_blank">Instagram</a>
-<a href="https://www.linkedin.com/in/luca-marsh-359b60295" target="_blank">LinkedIn</a>
-<a href="https://lucamarsh180.artstation.com/" target="_blank">ArtStation</a>
-</div>
-</section>
+<!-- SOCIAL MEDIA (moved below show reel) -->
 
 </div>
 
@@ -433,10 +478,27 @@ Workflow built around Blender, Houdini, Maya, and Adobe Suite with strong focus 
 
 <!-- RIGHT -->
 <div id="right">
-<iframe
-src="https://www.youtube.com/embed/Sen6BErwRbY?autoplay=1&mute=1&loop=1&playlist=Sen6BErwRbY"
-allow="autoplay; fullscreen">
-</iframe>
+  <div class="show-reel">
+    <div class="video-wrapper">
+      <iframe
+        src="https://www.youtube.com/embed/Sen6BErwRbY?autoplay=1&mute=1&loop=1&playlist=Sen6BErwRbY"
+        allow="autoplay; fullscreen">
+      </iframe>
+    </div>
+  </div>
+
+  <div class="reel-divider" aria-hidden="true"></div>
+
+  <section id="social">
+    <h3>Social Media</h3>
+    <div class="grid">
+      <a href="https://youtube.com/@brokenglassstudios3976" target="_blank">YouTube</a>
+      <a href="https://www.instagram.com/luca_marsh?igsh=MXBjZnBmZWR6MDk1Yw==" target="_blank">Instagram</a>
+      <a href="https://www.linkedin.com/in/luca-marsh-359b60295" target="_blank">LinkedIn</a>
+      <a href="https://lucamarsh180.artstation.com/" target="_blank">ArtStation</a>
+    </div>
+  </section>
+
 </div>
 
 </div>
