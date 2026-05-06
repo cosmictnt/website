@@ -1,0 +1,308 @@
+---
+// @ts-nocheck
+import Layout from '../layouts/Layout.astro';
+import images from '../data/portfolio.json';
+// Group images by the folder directly under `/My work/`.
+function folderName(src){
+  if(!src) return 'Misc';
+  const p = src.replace(/^\//, '');
+  const parts = p.split('/');
+  // Expecting paths like: 'My work/ProjectName/image.png' or 'My work/image.png'
+  if(parts.length >= 3) return parts[1];
+  if(parts.length === 2) return 'Misc';
+  return 'Misc';
+}
+const groupedObj = {};
+images.forEach(it => {
+  const name = folderName(it.src);
+  if(!groupedObj[name]) groupedObj[name] = [];
+  groupedObj[name].push(it);
+});
+  // Sort groups (folder names) and items within each group (by filename) for deterministic ordering
+  const groups = Object.keys(groupedObj)
+    .sort((a,b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+    .map(k => {
+      const items = groupedObj[k].slice().sort((a, b) => {
+        const an = (a.src || '').split('/').pop().toLowerCase();
+        const bn = (b.src || '').split('/').pop().toLowerCase();
+        return an.localeCompare(bn, undefined, { sensitivity: 'base' });
+      });
+      return { name: k, items };
+    });
+  
+  // Flatten in the same order so the lightbox index matches visual order
+  const flat = [];
+  groups.forEach(g => g.items.forEach(it => flat.push(it)));
+const indexMap = new Map(flat.map((it, idx) => [it.src, idx]));
+
+const __PORTFOLIO_DATA__ = JSON.stringify(flat).replace(/</g, '\u003c');
+---
+
+<Layout>
+  <main style="padding:2rem;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <a href="/" class="back-btn">← HOME</a>
+      <div>
+        <h1 style="margin:0 0 1rem 0;">Portfolio</h1>
+        <p style="margin:0 0 1.5rem 0;color:var(--light)">A selection of works.</p>
+      </div>
+    </div>
+
+    {groups.map(g => (
+      <section class="project">
+        <h2 class="project-title">{g.name}</h2>
+        <div class="project-divider" aria-hidden="true"></div>
+        <div class="portfolio-grid">
+          {g.items.map(item => (
+            <button class="tile" data-index={indexMap.get(item.src)} aria-label={`Open ${item.title}`}>
+              <img src={item.src} alt={item.title} loading="lazy" />
+            </button>
+          ))}
+        </div>
+      </section>
+    ))}
+
+    <!-- Lightbox modal (Amazon-like) -->
+    <div id="lightbox" class="lightbox" aria-hidden="true" role="dialog">
+      <button class="lb-close" aria-label="Close">✕</button>
+      <button class="lb-prev" aria-label="Previous">‹</button>
+      <div class="lb-stage">
+        <img id="lb-image" class="lb-image" src="" alt="" />
+        <div class="lb-meta">
+          <div id="lb-counter" class="lb-counter"></div>
+          <div id="lb-caption" class="lb-caption"></div>
+        </div>
+      </div>
+      <button class="lb-next" aria-label="Next">›</button>
+    </div>
+  </main>
+
+  <style is:global>
+    :root {
+      --light:#DFDD8A;
+      --mid:#939051;
+      --deep:#151402;
+    }
+    html,body{ background:var(--deep); color:var(--light); font-family:Inter, sans-serif }
+    /* Back button matching CTA style */
+    .back-btn{
+      display:inline-block;
+      padding:8px 12px;
+      background:rgba(0,0,0,0.35);
+      color:var(--light);
+      text-decoration:none;
+      border:1px solid rgba(147,144,81,0.4);
+      border-radius:6px;
+      font-weight:600;
+      transition:transform .16s ease, box-shadow .16s ease;
+    }
+    .back-btn:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,0.6) }
+    .portfolio-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+      gap:12px;
+      align-items:stretch;
+    }
+    .portfolio-grid .tile{
+      display:block;
+      overflow:hidden;
+      cursor:zoom-in;
+      z-index:1;
+      border-radius:10px;
+      border:1px solid rgba(147,144,81,0.12);
+      background:linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.25));
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.6), 0 6px 18px rgba(0,0,0,0.6);
+      position:relative;
+    }
+    /* small decorative icon top-left to match CRT accent */
+    .portfolio-grid .tile::before{
+      content:'';
+      position:absolute;
+      left:8px; top:8px;
+      width:10px; height:10px; border-radius:2px;
+      background:linear-gradient(180deg,var(--mid), rgba(0,0,0,0.2));
+      box-shadow:0 2px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+      z-index:2;
+      opacity:0.9;
+    }
+    /* subtle scanlines overlay that appears on hover */
+    .portfolio-grid .tile::after{
+      content:'';
+      position:absolute; inset:0;
+      background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.02), transparent 2px);
+      mix-blend-mode:overlay;
+      opacity:0;
+      transition:opacity .22s ease;
+      pointer-events:none;
+    }
+    .portfolio-grid .tile img{
+      width:100%;
+      height:240px;
+      object-fit:cover;
+      display:block;
+      transition:transform .28s cubic-bezier(.2,.9,.2,1), box-shadow .18s ease;
+    }
+    .portfolio-grid .tile:hover img{
+      transform:scale(1.12) rotate(-0.5deg);
+      box-shadow:0 12px 30px rgba(0,0,0,0.6), 0 0 18px rgba(147,144,81,0.06) inset;
+    }
+    .portfolio-grid .tile:hover::after{ opacity:0.35 }
+    @media (max-width:600px){
+      .portfolio-grid .tile img{ height:140px }
+    }
+    /* Lightbox styles */
+    .lightbox{ display:none; position:fixed; inset:0; align-items:center; justify-content:center; z-index:9999; background:rgba(0,0,0,0.92); padding:18px }
+    .lightbox[aria-hidden="false"]{ display:flex }
+    .lightbox .lb-stage{ position:relative; max-width:92%; max-height:86%; display:flex; align-items:center; justify-content:center; flex-direction:column }
+    .lb-image{ max-width:100%; max-height:78vh; object-fit:contain; border-radius:6px; box-shadow:0 18px 60px rgba(0,0,0,0.7); transform:scale(.98); opacity:0; transition:opacity .24s ease, transform .28s cubic-bezier(.2,.9,.2,1) }
+    .lightbox[aria-hidden="false"] .lb-image{ opacity:1; transform:scale(1) }
+    .lb-meta{ width:100%; margin-top:10px; display:flex; justify-content:space-between; align-items:center; gap:12px }
+    .lb-counter{ color:var(--mid); font-weight:600 }
+    .lb-caption{ color:var(--light); opacity:0.9; font-size:0.95rem }
+    .lb-close, .lb-prev, .lb-next{ position:fixed; background:rgba(0,0,0,0.6); color:var(--light); border:0; padding:10px 14px; border-radius:8px; font-size:20px; cursor:pointer }
+    .lb-close{ right:16px; top:16px }
+    .lb-prev{ left:8px; top:50%; transform:translateY(-50%); padding:12px 14px; border-radius:999px }
+    .lb-next{ right:8px; top:50%; transform:translateY(-50%); padding:12px 14px; border-radius:999px }
+    .lb-prev:hover, .lb-next:hover{ background:rgba(147,144,81,0.12) }
+      .project-divider{
+        height:6px;
+        width:100%;
+        margin:6px 0 12px 0;
+        border-radius:4px;
+        background: linear-gradient(90deg, rgba(147,144,81,0.06), rgba(223,221,138,0.26), rgba(147,144,81,0.06));
+        box-shadow: 0 6px 18px rgba(147,144,81,0.06), inset 0 1px 0 rgba(255,255,255,0.02);
+        position:relative;
+        overflow:hidden;
+      }
+      .project-divider::after{
+        content:'';
+        position:absolute; inset:0;
+        background:repeating-linear-gradient(to right, rgba(255,255,255,0.03), transparent 6px);
+        mix-blend-mode:overlay;
+        opacity:0.5;
+        pointer-events:none;
+      }
+      .project-divider::before{
+        content:'';
+        position:absolute; left:-40%; top:0; bottom:0; width:40%;
+        background:linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01), rgba(255,255,255,0.06));
+        transform: skewX(-12deg);
+        opacity:0.18;
+        animation: sweep 4s linear infinite;
+        pointer-events:none;
+      }
+      @keyframes sweep{ to { transform: translateX(200%) skewX(-12deg); } }
+      .lb-close:focus, .lb-prev:focus, .lb-next:focus{ outline:2px solid rgba(147,144,81,0.6); outline-offset:3px }
+
+    /* Mobile adjustments */
+    @media (max-width:900px){
+      main{ padding:1rem }
+      .project-title{ font-size:1rem }
+      .portfolio-grid{ gap:10px; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)) }
+      .back-btn{ padding:10px 14px }
+    }
+    @media (max-width:480px){
+      .portfolio-grid{ grid-template-columns:repeat(auto-fill, minmax(120px,1fr)) }
+      .portfolio-grid .tile img{ height:120px }
+      .lb-close, .lb-prev, .lb-next{ padding:14px; font-size:20px }
+      .lightbox .lb-stage{ max-width:98%; max-height:76% }
+    }
+  </style>
+  <script is:inline>
+    // embed portfolio data for client-side JS (pre-escaped in frontmatter)
+    try{
+      window.__PORTFOLIO_DATA__ = JSON.parse(__PORTFOLIO_DATA__);
+    }catch(e){
+      // fallback: if it's already an object literal
+      window.__PORTFOLIO_DATA__ = __PORTFOLIO_DATA__ || [];
+    }
+  </script>
+  <script>
+    // @ts-nocheck
+    /* eslint-disable */
+    /* eslint-disable no-undef */
+    (function(){
+      function onReady(){
+        const data = window.__PORTFOLIO_DATA__ || [];
+        const tiles = Array.from(document.querySelectorAll('.portfolio-grid .tile'));
+        console.debug('[portfolio] items in data:', data.length, 'tiles found:', tiles.length);
+        const lightbox = document.getElementById('lightbox');
+        const lbImage = document.getElementById('lb-image');
+        const lbCaption = document.getElementById('lb-caption');
+        let idx = 0;
+
+        function lockScroll(lock){
+          if(lock) document.documentElement.style.overflow = 'hidden';
+          else document.documentElement.style.overflow = '';
+        }
+
+        function show(i){
+          const item = data[i];
+          const lbM = document.getElementById('lb-image');
+          const lbCounter = document.getElementById('lb-counter');
+          if(!item || !lightbox || !lbM || !lbCaption) return;
+          idx = i;
+          lbM.setAttribute('src', item.src);
+          lbM.setAttribute('alt', item.title || '');
+          lbCaption.textContent = item.title || '';
+          lbCounter.textContent = `${i+1} / ${data.length}`;
+          lightbox.setAttribute('aria-hidden','false');
+          // force reflow for animation
+          void lbM.offsetWidth;
+          lockScroll(true);
+        }
+
+        function hide(){
+          const lbM = document.getElementById('lb-image');
+          if(!lightbox || !lbM) return;
+          lightbox.setAttribute('aria-hidden','true');
+          lbM.setAttribute('src','');
+          lockScroll(false);
+        }
+
+        function prev(){ show((idx -1 + data.length) % data.length) }
+        function next(){ show((idx +1) % data.length) }
+
+        tiles.forEach(t => {
+          t.addEventListener('click', () => {
+            // Robustly compute index by looking up the image src inside the button
+            const img = t.querySelector('img');
+            const src = img && img.getAttribute ? img.getAttribute('src') : null;
+            let index = null;
+            if(src && window.__PORTFOLIO_DATA__){
+              // indexMap is not available in runtime, so attempt to find index by matching src in data
+              for(let i=0;i<window.__PORTFOLIO_DATA__.length;i++){
+                if(window.__PORTFOLIO_DATA__[i].src === src){ index = i; break; }
+              }
+            }
+            if(index === null){
+              const di = parseInt(t.getAttribute('data-index')||'',10);
+              if(!Number.isNaN(di)) index = di;
+            }
+            if(index !== null) show(index);
+          });
+        });
+
+        const btnClose = document.querySelector('.lb-close');
+        const btnPrev = document.querySelector('.lb-prev');
+        const btnNext = document.querySelector('.lb-next');
+        if(btnClose) btnClose.addEventListener('click', hide);
+        if(btnPrev) btnPrev.addEventListener('click', prev);
+        if(btnNext) btnNext.addEventListener('click', next);
+
+        document.addEventListener('keydown', (e)=>{
+          if(!lightbox) return;
+          if(lightbox.getAttribute('aria-hidden') === 'false'){
+            if(e.key === 'Escape') hide();
+            if(e.key === 'ArrowLeft') prev();
+            if(e.key === 'ArrowRight') next();
+          }
+        });
+        // click outside image to close
+        if(lightbox) lightbox.addEventListener('click', (e)=>{ if(e.target === lightbox) hide(); });
+      }
+      if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady);
+      else onReady();
+    })();
+  </script>
+</Layout>
